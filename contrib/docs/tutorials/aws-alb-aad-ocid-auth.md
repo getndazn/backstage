@@ -21,7 +21,7 @@ Instead of `localhost` addresses, use the following values.
 
 `Application (client) Id`, `Directory (tenant) ID` and `client secret`values will be used while configuring the ALB.
 
-### AWS ALB (Applicaton Load Balancer)
+### ALB
 
 In AWS console configure ALB Authentication as described below:
 
