@@ -1,6 +1,6 @@
 # Using AWS Application Load Balancer with Azure Active Directory to authenticate requests
 
-Backstage allows to offload the responsibility of authenticating users to AWS Application Loabalancer (ALB), leveraging the authentication support on ALB.
+Backstage allows to offload the responsibility of authenticating users to AWS Application Loadbalancer (ALB), leveraging the authentication support on ALB.
 This tutorial shows how to use authentication on an ALB sitting in front of Backstage.
 Azure Active Directory (AAD) is used as identity provider but any identity provider supporting OpenID Connect (OIDC) can be used.
 
@@ -10,7 +10,7 @@ It is assumed an ALB is already serving traffic in front of a Backstage instance
 
 ### AAD App
 
-The AAD App is used to execute the autentication flow, serve and refresh the identity token.
+The AAD App is used to execute the authentication flow, serve and refresh the identity token.
 
 Create the AAD App following the steps outlined in `Create a Microsoft App Registration in Microsoft Portal` section from the tutorial [Monorepo App Setup With Authentication][monorepo-app-setup-with-auth].
 
@@ -55,28 +55,31 @@ The Backstage App requires a SingInPage when authentication is required. When us
 
 ```ts
 const DummySignInComponent: any = (props: any) => {
-
   const config = useApi(configApiRef);
   const shouldAuth = !!config.getOptionalConfig('auth.providers.awsalb');
   if (shouldAuth) {
-    fetch(`${window.location.origin}/api/auth/awsalb/refresh`).then(data => data.json()).then((data) => {
-      props.onResult({ userId: data.backstageIdentity.id, profile: data.profile })
-    });
+    fetch(`${window.location.origin}/api/auth/awsalb/refresh`)
+      .then(data => data.json())
+      .then(data => {
+        props.onResult({
+          userId: data.backstageIdentity.id,
+          profile: data.profile,
+        });
+      });
   } else {
     // when running locally we default user identity to `Local User`
     props.onResult({
-      userId: "local user", profile: {
-        email: "local.user@yourdomain.com",
-        displayName: "Local User",
-        picture: "",
-      }
-    })
+      userId: 'local user',
+      profile: {
+        email: 'local.user@yourdomain.com',
+        displayName: 'Local User',
+        picture: '',
+      },
+    });
   }
 
-  return (
-    <div />
-  );
-}
+  return <div />;
+};
 ```
 
 - use `DummySingInComponent` as `SignInPage` by changing `createApp` statement as follow:
@@ -106,7 +109,12 @@ When using ALB auth it is not possible to leverage the built-in auth config disc
 - replace the content of `packages/backend/plugin/auth.ts` with the below
 
 ```ts
-import { createRouter, AuthResponse, AuthProviderFactoryOptions, defaultAuthProviderFactories } from '@backstage/plugin-auth-backend';
+import {
+  createRouter,
+  AuthResponse,
+  AuthProviderFactoryOptions,
+  defaultAuthProviderFactories,
+} from '@backstage/plugin-auth-backend';
 import { PluginEnvironment } from '../types';
 
 export default async function createPlugin({
@@ -115,9 +123,7 @@ export default async function createPlugin({
   config,
   discovery,
 }: PluginEnvironment) {
-  const identityResolver = (
-    payload: any,
-  ): Promise<AuthResponse<any>> => {
+  const identityResolver = (payload: any): Promise<AuthResponse<any>> => {
     return Promise.resolve({
       providerInfo: {},
       profile: {
@@ -127,13 +133,20 @@ export default async function createPlugin({
       },
       backstageIdentity: {
         id: payload.email,
-      }
+      },
     });
   };
   const providerFactories = {
-    awsalb: (options: AuthProviderFactoryOptions) => defaultAuthProviderFactories.awsalb({ ...options, identityResolver })
-  }
-  return await createRouter({ logger, config, database, discovery, providerFactories });
+    awsalb: (options: AuthProviderFactoryOptions) =>
+      defaultAuthProviderFactories.awsalb({ ...options, identityResolver }),
+  };
+  return await createRouter({
+    logger,
+    config,
+    database,
+    discovery,
+    providerFactories,
+  });
 }
 ```
 
@@ -144,13 +157,13 @@ Use the following `auth` configuration when running Backstage on AWS.
 ```yaml
 auth:
   providers:
-   awsalb:
-    issuer:
-      issuer: https://login.microsoftonline.com/{TENANT_ID}/v2.0
-      region: {AWS_REGION}
+    awsalb:
+      issuer:
+        issuer: https://login.microsoftonline.com/{TENANT_ID}/v2.0
+        region: { AWS_REGION }
 ```
 
-Replace `{TENANT_ID}` with the value of `Directory (tenant) ID` of the AAD App and `{AWS_REGION}` with the AWS region identifier where the ALB is deployed (ie: `eu-central-1`).
+Replace `{TENANT_ID}` with the value of `Directory (tenant) ID` of the AAD App and `{AWS_REGION}` with the AWS region identifier where the ALB is deployed (for example: `eu-central-1`).
 
 ## Conclusion
 
@@ -158,8 +171,8 @@ Once the deployed, after having gone through the AAD authentication flow, Backst
 
 Special thanks to [@backjo][gh-backjo] for implementing the `auth-backend` provider for AWS ALB on [#4047][pr-4047]
 
-
 <!-- links -->
+
 [monorepo-app-setup-with-auth-ms]: https://backstage.io/docs/tutorials/quickstart-app-auth#the-auth-configuration
 [gh-backjo]: https://github.com/backjo
 [pr-4047]: https://github.com/backstage/backstage/pull/4047
