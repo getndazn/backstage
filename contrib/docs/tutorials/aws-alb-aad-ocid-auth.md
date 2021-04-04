@@ -8,7 +8,7 @@ It is assumed an ALB is already serving traffic in front of a Backstage instance
 
 ## Infrastructure setup
 
-### AAD (Azure Active Directory) App
+### AAD App
 
 The AAD App is used to execute the autentication flow, serve and refresh the identity token.
 
